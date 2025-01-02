@@ -246,6 +246,15 @@ async def connect_to_wss(socks5_proxy, user_id, mode):
             )
             await asyncio.sleep(5)
 
+async def fetch_proxies(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.text()
+            else:
+                print(f"{Fore.RED}Failed to fetch proxies from URL.{Style.RESET_ALL}")
+                return []
+
 async def main():
     print(f"{Fore.CYAN}{BANNER}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}IM-Hanzou | GetGrass Crooter V2{Style.RESET_ALL}")
@@ -265,11 +274,17 @@ async def main():
     
     _user_id = input('Please Enter your user ID: ')
     
-    with open('proxy_list.txt', 'r') as file:
-        local_proxies = file.read().splitlines()
-    
-    print(f"{Fore.YELLOW}Total Proxies: {len(local_proxies)}{Style.RESET_ALL}")
-    
+    # Fetch proxies from the URL
+    proxies_url = "https://raw.githubusercontent.com/yheelah/ijo2/refs/heads/main/proxys.txt"
+    proxy_text = await fetch_proxies(proxies_url)
+    if proxy_text:
+        local_proxies = proxy_text.splitlines()
+        print(f"{Fore.YELLOW}Total Proxies: {len(local_proxies)}{Style.RESET_ALL}")
+    else:
+        local_proxies = []
+        print(f"{Fore.RED}No proxies found.{Style.RESET_ALL}")
+        return  # Exit if no proxies found
+
     tasks = [asyncio.ensure_future(connect_to_wss(i, _user_id, mode)) for i in local_proxies]
     await asyncio.gather(*tasks)
 
